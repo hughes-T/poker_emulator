@@ -28,12 +28,12 @@ app.use(cors({
 app.use(express.json());
 
 // 健康检查端点
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // 根路径
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
   res.json({
     name: 'Poker Emulator Backend',
     version: '1.0.0',

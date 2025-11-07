@@ -1,4 +1,4 @@
-import { Room, Player, GameType, Card } from '../types';
+import { Room, GameType } from '../types';
 import { Deck } from './Deck';
 
 /**
