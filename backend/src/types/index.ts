@@ -60,6 +60,8 @@ export interface Player {
   isFolded: boolean;   // 是否淘汰/弃牌
   currentBet: number;  // 当前回合下注额
   totalBet: number;    // 本局总下注额
+  isOnline: boolean;   // 是否在线
+  disconnectedAt?: Date; // 断线时间
 }
 
 /**

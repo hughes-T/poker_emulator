@@ -45,7 +45,9 @@ export class RoomManager {
         isLooking: false,  // 未看牌
         isFolded: false,   // 未淘汰
         currentBet: 0,     // 当前未下注
-        totalBet: 0        // 总下注为0
+        totalBet: 0,       // 总下注为0
+        isOnline: true,    // 在线
+        disconnectedAt: undefined
       }],
       hostId,
       status: 'waiting',
@@ -94,7 +96,9 @@ export class RoomManager {
       isLooking: false,  // 未看牌
       isFolded: false,   // 未淘汰
       currentBet: 0,     // 当前未下注
-      totalBet: 0        // 总下注为0
+      totalBet: 0,       // 总下注为0
+      isOnline: true,    // 在线
+      disconnectedAt: undefined
     });
 
     return room;
@@ -239,14 +243,73 @@ export class RoomManager {
   }
 
   /**
-   * 清理超过 24 小时的空房间
+   * 标记玩家离线
+   */
+  markPlayerOffline(roomId: string, playerId: string): Room | null {
+    const room = this.rooms.get(roomId);
+    if (!room) {
+      return null;
+    }
+
+    const player = room.players.find(p => p.id === playerId);
+    if (player) {
+      player.isOnline = false;
+      player.disconnectedAt = new Date();
+    }
+
+    return room;
+  }
+
+  /**
+   * 玩家重连
+   */
+  reconnectPlayer(roomId: string, oldPlayerId: string, newPlayerId: string): Room | null {
+    const room = this.rooms.get(roomId);
+    if (!room) {
+      return null;
+    }
+
+    const player = room.players.find(p => p.id === oldPlayerId);
+    if (player) {
+      player.id = newPlayerId;
+      player.isOnline = true;
+      player.disconnectedAt = undefined;
+
+      // 如果是房主，更新房主ID
+      if (room.hostId === oldPlayerId) {
+        room.hostId = newPlayerId;
+      }
+    }
+
+    return room;
+  }
+
+  /**
+   * 清理离线超过2分钟的玩家和空房间
    */
   cleanupOldRooms(): void {
     const now = new Date();
-    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const twoMinutesAgo = new Date(now.getTime() - 2 * 60 * 1000); // 2分钟
+    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000); // 24小时
 
     for (const [roomId, room] of this.rooms.entries()) {
-      if (room.createdAt < oneDayAgo && room.players.length === 0) {
+      // 清理离线超过2分钟的玩家
+      room.players = room.players.filter(player => {
+        if (!player.isOnline && player.disconnectedAt && player.disconnectedAt < twoMinutesAgo) {
+          return false; // 移除该玩家
+        }
+        return true; // 保留玩家
+      });
+
+      // 如果房间为空，删除房间
+      if (room.players.length === 0) {
+        this.rooms.delete(roomId);
+        continue;
+      }
+
+      // 如果房间创建超过24小时且没有在线玩家，删除房间
+      const hasOnlinePlayers = room.players.some(p => p.isOnline);
+      if (room.createdAt < oneDayAgo && !hasOnlinePlayers) {
         this.rooms.delete(roomId);
       }
     }

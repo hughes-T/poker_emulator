@@ -122,13 +122,20 @@ export class SocketHandlers {
 
         const room = this.roomManager.dealCards(roomId, socket.id);
 
-        // 给每个玩家发送他们自己的牌
+        // 给每个玩家发送他们自己的牌和完整的游戏状态
         room.players.forEach(player => {
           this.io.to(player.id).emit('cardsDealt', {
             players: room.players.map(p => ({
               id: p.id,
               name: p.name,
-              cards: p.id === player.id ? p.cards : [] // 只发送自己的牌
+              cards: p.id === player.id ? p.cards : [], // 只发送自己的牌
+              isReady: p.isReady,
+              chips: p.chips,
+              isLooking: p.isLooking,
+              isFolded: p.isFolded,
+              currentBet: p.currentBet,
+              totalBet: p.totalBet,
+              isOnline: p.isOnline
             }))
           });
         });

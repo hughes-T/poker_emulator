@@ -53,14 +53,14 @@ function Room() {
     });
 
     socket.on('cardsDealt', (data) => {
-      // 更新玩家的手牌数据
+      // 更新玩家的手牌数据和游戏状态
       setRoom(prevRoom => {
         if (!prevRoom) return null;
 
-        // 合并新的cards数据到现有玩家
+        // 合并新的玩家数据（包括cards, isFolded, isLooking等所有状态）
         const updatedPlayers = prevRoom.players.map(p => {
           const playerData = data.players.find(dp => dp.id === p.id);
-          return playerData ? { ...p, cards: playerData.cards } : p;
+          return playerData ? { ...p, ...playerData } : p;
         });
 
         return {
