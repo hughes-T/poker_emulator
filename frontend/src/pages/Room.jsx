@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   getSocket,
+  joinRoom,
   leaveRoom,
   dealCards,
   placeBet,
@@ -45,6 +46,7 @@ function Room() {
   const [showCompareDialog, setShowCompareDialog] = useState(false);
   const [gameMessage, setGameMessage] = useState('');
   const [reconnecting, setReconnecting] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     // 如果没有玩家信息，返回首页
@@ -53,26 +55,30 @@ function Room() {
       return;
     }
 
+    const socket = getSocket();
+
     // 如果是从 localStorage 恢复的会话，尝试重新加入房间
     if (!initialRoom && playerName) {
       setReconnecting(true);
       joinRoom(roomId, playerName)
         .then(data => {
           setRoom(data.room);
+          // 重新获取 socket ID（重连后 socket ID 会变化）
+          setMyId(socket.id);
           setReconnecting(false);
         })
         .catch(err => {
           console.error('Reconnection failed:', err);
-          setError('重新连接失败: ' + err.message);
+          setError(`重新连接失败: ${err.message}`);
           setReconnecting(false);
           // 清除无效的会话数据
           localStorage.removeItem('poker_session');
           setTimeout(() => navigate('/'), 2000);
         });
+    } else {
+      // 正常加入，设置 socket ID
+      setMyId(socket.id);
     }
-
-    const socket = getSocket();
-    setMyId(socket.id);
 
     // 监听房间更新
     socket.on('roomCreated', (data) => {
@@ -203,6 +209,27 @@ function Room() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleRefreshRoom = () => {
+    if (!playerName) return;
+
+    setRefreshing(true);
+    joinRoom(roomId, playerName)
+      .then(data => {
+        setRoom(data.room);
+        // 更新 socket ID
+        const socket = getSocket();
+        setMyId(socket.id);
+        showMessage('房间状态已刷新');
+        setRefreshing(false);
+      })
+      .catch(err => {
+        console.error('Refresh failed:', err);
+        setError(`刷新失败: ${err.message}`);
+        setTimeout(() => setError(''), 3000);
+        setRefreshing(false);
+      });
+  };
+
   // 炸金花游戏操作
   const handleBet = (amount) => {
     placeBet(roomId, amount);
@@ -284,6 +311,14 @@ function Room() {
                 className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-colors"
               >
                 分享链接
+              </button>
+              <button
+                onClick={handleRefreshRoom}
+                disabled={refreshing}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-500 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors"
+                title="刷新房间状态，同步最新游戏数据"
+              >
+                {refreshing ? '刷新中...' : '🔄 刷新'}
               </button>
               <button
                 onClick={handleLeaveRoom}
