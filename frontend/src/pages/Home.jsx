@@ -24,6 +24,13 @@ function Home() {
 
     try {
       const data = await createRoom(playerName.trim(), gameType);
+
+      // 保存会话信息以支持断线重连
+      localStorage.setItem('poker_session', JSON.stringify({
+        roomId: data.roomId,
+        playerName: playerName.trim()
+      }));
+
       navigate(`/room/${data.roomId}`, {
         state: {
           playerName: playerName.trim(),
@@ -54,6 +61,13 @@ function Home() {
 
     try {
       const data = await joinRoom(roomId.trim().toUpperCase(), playerName.trim());
+
+      // 保存会话信息以支持断线重连
+      localStorage.setItem('poker_session', JSON.stringify({
+        roomId: roomId.trim().toUpperCase(),
+        playerName: playerName.trim()
+      }));
+
       navigate(`/room/${roomId.trim().toUpperCase()}`, {
         state: {
           playerName: playerName.trim(),

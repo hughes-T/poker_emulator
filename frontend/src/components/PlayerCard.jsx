@@ -40,6 +40,9 @@ function PlayerCard({ player, isCurrentPlayer, showCards, isCurrentTurn, gameSta
 
         {/* 状态标签 */}
         <div className="flex gap-1">
+          {!player.isOnline && (
+            <span className="text-xs bg-gray-500/20 text-gray-300 px-2 py-1 rounded">离线</span>
+          )}
           {isFolded && (
             <span className="text-xs bg-red-500/20 text-red-300 px-2 py-1 rounded">已淘汰</span>
           )}

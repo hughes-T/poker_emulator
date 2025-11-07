@@ -65,7 +65,7 @@ export class RoomManager {
   }
 
   /**
-   * 加入房间
+   * 加入房间（支持断线重连）
    */
   joinRoom(roomId: string, playerId: string, playerName: string): Room {
     const room = this.rooms.get(roomId);
@@ -74,17 +74,30 @@ export class RoomManager {
       throw new Error('房间不存在');
     }
 
+    // 检查是否已经在房间中（相同socket ID）
+    if (room.players.some(p => p.id === playerId && p.isOnline)) {
+      throw new Error('您已在房间中');
+    }
+
+    // 查找是否有同名离线玩家（断线重连）
+    const offlinePlayer = room.players.find(p => p.name === playerName && !p.isOnline);
+
+    if (offlinePlayer) {
+      // 断线重连：更新玩家的 socket ID 并标记为在线
+      console.log(`玩家 ${playerName} 重新连接到房间 ${roomId}`);
+      offlinePlayer.id = playerId;
+      offlinePlayer.isOnline = true;
+      offlinePlayer.disconnectedAt = undefined;
+      return room;
+    }
+
+    // 新玩家加入
     if (room.status !== 'waiting') {
       throw new Error('游戏已开始，无法加入');
     }
 
     if (room.players.length >= this.MAX_PLAYERS) {
       throw new Error('房间已满');
-    }
-
-    // 检查是否已经在房间中
-    if (room.players.some(p => p.id === playerId)) {
-      throw new Error('您已在房间中');
     }
 
     room.players.push({

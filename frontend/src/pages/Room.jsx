@@ -20,7 +20,23 @@ function Room() {
   const { roomId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { playerName, isHost, initialRoom } = location.state || {};
+  let { playerName, isHost, initialRoom } = location.state || {};
+
+  // 尝试从 localStorage 恢复会话（断线重连）
+  if (!playerName) {
+    const sessionData = localStorage.getItem('poker_session');
+    if (sessionData) {
+      try {
+        const session = JSON.parse(sessionData);
+        if (session.roomId === roomId) {
+          playerName = session.playerName;
+          isHost = false; // 重连时不作为房主
+        }
+      } catch (e) {
+        console.error('Failed to parse session data:', e);
+      }
+    }
+  }
 
   const [room, setRoom] = useState(initialRoom || null);
   const [myId, setMyId] = useState(null);
@@ -28,12 +44,31 @@ function Room() {
   const [copied, setCopied] = useState(false);
   const [showCompareDialog, setShowCompareDialog] = useState(false);
   const [gameMessage, setGameMessage] = useState('');
+  const [reconnecting, setReconnecting] = useState(false);
 
   useEffect(() => {
     // 如果没有玩家信息，返回首页
     if (!playerName) {
       navigate('/');
       return;
+    }
+
+    // 如果是从 localStorage 恢复的会话，尝试重新加入房间
+    if (!initialRoom && playerName) {
+      setReconnecting(true);
+      joinRoom(roomId, playerName)
+        .then(data => {
+          setRoom(data.room);
+          setReconnecting(false);
+        })
+        .catch(err => {
+          console.error('Reconnection failed:', err);
+          setError('重新连接失败: ' + err.message);
+          setReconnecting(false);
+          // 清除无效的会话数据
+          localStorage.removeItem('poker_session');
+          setTimeout(() => navigate('/'), 2000);
+        });
     }
 
     const socket = getSocket();
@@ -145,6 +180,8 @@ function Room() {
   const handleLeaveRoom = () => {
     if (window.confirm('确定要离开房间吗？')) {
       leaveRoom(roomId);
+      // 清除会话数据
+      localStorage.removeItem('poker_session');
       navigate('/');
     }
   };
@@ -195,8 +232,12 @@ function Room() {
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-white mb-4"></div>
-          <div className="text-white text-xl mb-2">正在连接到房间...</div>
-          <div className="text-white/70 text-sm">请稍候，正在建立实时连接</div>
+          <div className="text-white text-xl mb-2">
+            {reconnecting ? '正在重新连接...' : '正在连接到房间...'}
+          </div>
+          <div className="text-white/70 text-sm">
+            {reconnecting ? '正在恢复您的游戏状态' : '请稍候，正在建立实时连接'}
+          </div>
         </div>
       </div>
     );

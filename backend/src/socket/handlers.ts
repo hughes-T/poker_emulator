@@ -307,18 +307,20 @@ export class SocketHandlers {
     socket.on('disconnect', () => {
       console.log(`客户端断开: ${socket.id}`);
 
-      // 查找玩家所在的房间并自动离开
+      // 查找玩家所在的房间并标记为离线
       const rooms = this.roomManager.getAllRooms();
       for (const room of rooms) {
         if (room.players.some(p => p.id === socket.id)) {
           try {
-            const result = this.roomManager.leaveRoom(room.id, socket.id);
+            const updatedRoom = this.roomManager.markPlayerOffline(room.id, socket.id);
 
-            if (!result.isEmpty && result.room) {
-              this.io.to(room.id).emit('playerLeft', { room: result.room, playerId: socket.id });
+            if (updatedRoom) {
+              // 通知房间内其他人该玩家已离线
+              this.io.to(room.id).emit('gameStateUpdate', { room: updatedRoom });
+              console.log(`玩家 ${socket.id} 在房间 ${room.id} 离线`);
             }
           } catch (error) {
-            console.error(`清理断开连接的玩家失败:`, error);
+            console.error(`标记玩家离线失败:`, error);
           }
         }
       }
