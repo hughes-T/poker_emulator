@@ -53,9 +53,13 @@ function Home() {
     setError('');
 
     try {
-      await joinRoom(roomId.trim().toUpperCase(), playerName.trim());
+      const data = await joinRoom(roomId.trim().toUpperCase(), playerName.trim());
       navigate(`/room/${roomId.trim().toUpperCase()}`, {
-        state: { playerName: playerName.trim(), isHost: false }
+        state: {
+          playerName: playerName.trim(),
+          isHost: false,
+          initialRoom: data.room  // 传递初始房间数据
+        }
       });
     } catch (err) {
       setError(err.message);
