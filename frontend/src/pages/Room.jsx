@@ -7,9 +7,9 @@ function Room() {
   const { roomId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { playerName, isHost } = location.state || {};
+  const { playerName, isHost, initialRoom } = location.state || {};
 
-  const [room, setRoom] = useState(null);
+  const [room, setRoom] = useState(initialRoom || null);
   const [myId, setMyId] = useState(null);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
@@ -91,8 +91,12 @@ function Room() {
 
   if (!room) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-white text-xl">加载中...</div>
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-white mb-4"></div>
+          <div className="text-white text-xl mb-2">正在连接到房间...</div>
+          <div className="text-white/70 text-sm">请稍候，正在建立实时连接</div>
+        </div>
       </div>
     );
   }

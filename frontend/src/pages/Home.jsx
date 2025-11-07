@@ -25,7 +25,11 @@ function Home() {
     try {
       const data = await createRoom(playerName.trim(), gameType);
       navigate(`/room/${data.roomId}`, {
-        state: { playerName: playerName.trim(), isHost: true }
+        state: {
+          playerName: playerName.trim(),
+          isHost: true,
+          initialRoom: data.room  // 传递初始房间数据
+        }
       });
     } catch (err) {
       setError(err.message);
