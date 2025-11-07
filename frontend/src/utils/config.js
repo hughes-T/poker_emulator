@@ -4,7 +4,7 @@
 
 // 后端 WebSocket URL
 export const WS_URL = import.meta.env.PROD
-  ? 'https://your-backend.railway.app'  // 生产环境（需要替换成实际的 Railway URL）
+  ? 'https://pokeremulator-production.up.railway.app'  // 生产环境 Railway URL
   : 'http://localhost:3000';
 
 // 开发模式
