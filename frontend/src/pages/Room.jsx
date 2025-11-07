@@ -328,6 +328,7 @@ function Room() {
               <BettingControls
                 isMyTurn={isMyTurn}
                 myPlayer={currentPlayer}
+                currentMaxBet={room.maxBet || ZHAJINHUA_CONFIG.MIN_BET}
                 onBet={handleBet}
                 onLook={handleLook}
                 onCompare={handleCompare}

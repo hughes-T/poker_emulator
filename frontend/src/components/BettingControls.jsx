@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ZHAJINHUA_CONFIG } from '../utils/config';
 
 /**
@@ -7,13 +7,21 @@ import { ZHAJINHUA_CONFIG } from '../utils/config';
 function BettingControls({
   isMyTurn,
   myPlayer,
+  currentMaxBet,
   onBet,
   onLook,
   onCompare,
   onFold,
   disabled
 }) {
-  const [betAmount, setBetAmount] = useState(ZHAJINHUA_CONFIG.MIN_BET);
+  const [betAmount, setBetAmount] = useState(currentMaxBet);
+
+  // 当 currentMaxBet 变化时更新 betAmount
+  useEffect(() => {
+    if (betAmount < currentMaxBet) {
+      setBetAmount(currentMaxBet);
+    }
+  }, [currentMaxBet, betAmount]);
 
   if (!isMyTurn) {
     return (
@@ -43,11 +51,17 @@ function BettingControls({
           </span>
         </div>
 
+        {currentMaxBet > 1 && (
+          <div className="text-white/60 text-xs mb-2">
+            当前最小下注: {currentMaxBet} （跟注）
+          </div>
+        )}
+
         {/* 下注金额滑块 */}
         <div className="mb-4">
           <input
             type="range"
-            min={ZHAJINHUA_CONFIG.MIN_BET}
+            min={currentMaxBet}
             max={maxBet}
             step={1}
             value={betAmount}
@@ -56,7 +70,7 @@ function BettingControls({
             disabled={disabled}
           />
           <div className="flex justify-between text-white/70 text-sm mt-1">
-            <span>{ZHAJINHUA_CONFIG.MIN_BET}</span>
+            <span>{currentMaxBet}</span>
             <span className="text-white font-bold">{betAmount}</span>
             <span>{maxBet}</span>
           </div>

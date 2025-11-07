@@ -359,6 +359,16 @@ export class RoomManager {
       throw new Error('您已被淘汰');
     }
 
+    // 检查下注是否符合规则：必须 >= 之前的最大下注额
+    if (amount < room.maxBet) {
+      throw new Error(`下注额不能小于 ${room.maxBet}`);
+    }
+
+    const minBet = 1; // 最小下注单位
+    if (amount < minBet) {
+      throw new Error(`最小下注额为 ${minBet}`);
+    }
+
     // 根据是否看牌计算实际下注额
     const multiplier = player.isLooking ? 2 : 1;
     const actualBet = amount * multiplier;
@@ -368,21 +378,15 @@ export class RoomManager {
       throw new Error('积分不足');
     }
 
-    // 检查下注是否符合规则
-    const minBet = 1; // 最小下注单位
-    if (amount < minBet) {
-      throw new Error(`最小下注额为 ${minBet}`);
-    }
-
     // 扣除积分并更新状态
     player.chips -= actualBet;
     player.currentBet = actualBet;
     player.totalBet += actualBet;
     room.pot += actualBet;
 
-    // 更新最高下注额
-    if (actualBet > room.maxBet) {
-      room.maxBet = actualBet;
+    // 更新最高下注额（记录玩家选择的amount，而非实际消耗）
+    if (amount > room.maxBet) {
+      room.maxBet = amount;
     }
 
     // 记录操作
