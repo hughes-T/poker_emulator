@@ -14,14 +14,21 @@ function BettingControls({
   onFold,
   disabled
 }) {
-  const [betAmount, setBetAmount] = useState(currentMaxBet);
+  const multiplier = myPlayer?.isLooking ? 2 : 1;
 
-  // 当 currentMaxBet 变化时更新 betAmount
+  // currentMaxBet 是实际消耗的积分，需要根据玩家状态计算最小下注额
+  // 看牌玩家：最小下注 = currentMaxBet / 2（因为会乘2）
+  // 闷牌玩家：最小下注 = currentMaxBet
+  const minBetAmount = Math.ceil(currentMaxBet / multiplier);
+
+  const [betAmount, setBetAmount] = useState(minBetAmount);
+
+  // 当最小下注额变化时更新 betAmount
   useEffect(() => {
-    if (betAmount < currentMaxBet) {
-      setBetAmount(currentMaxBet);
+    if (betAmount < minBetAmount) {
+      setBetAmount(minBetAmount);
     }
-  }, [currentMaxBet, betAmount]);
+  }, [minBetAmount, betAmount]);
 
   if (!isMyTurn) {
     return (
@@ -33,7 +40,6 @@ function BettingControls({
     );
   }
 
-  const multiplier = myPlayer?.isLooking ? 2 : 1;
   const actualBet = betAmount * multiplier;
   const maxBet = myPlayer?.isLooking ? ZHAJINHUA_CONFIG.LOOK_BET_MAX : ZHAJINHUA_CONFIG.BLIND_BET_MAX;
 
@@ -53,7 +59,7 @@ function BettingControls({
 
         {currentMaxBet > 1 && (
           <div className="text-white/60 text-xs mb-2">
-            当前最小下注: {currentMaxBet} （跟注）
+            当前最小下注: {minBetAmount} （消耗{currentMaxBet}积分）
           </div>
         )}
 
@@ -61,7 +67,7 @@ function BettingControls({
         <div className="mb-4">
           <input
             type="range"
-            min={currentMaxBet}
+            min={minBetAmount}
             max={maxBet}
             step={1}
             value={betAmount}
@@ -70,7 +76,7 @@ function BettingControls({
             disabled={disabled}
           />
           <div className="flex justify-between text-white/70 text-sm mt-1">
-            <span>{currentMaxBet}</span>
+            <span>{minBetAmount}</span>
             <span className="text-white font-bold">{betAmount}</span>
             <span>{maxBet}</span>
           </div>

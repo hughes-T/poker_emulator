@@ -190,7 +190,7 @@ export class RoomManager {
       room.round = 1;
       room.pot = 0;
       room.currentPlayerIndex = 0;
-      room.maxBet = 0;
+      room.maxBet = 1;  // 初始最小下注为底注1
       room.anteCollected = false;
       room.status = 'playing';
 
@@ -359,11 +359,6 @@ export class RoomManager {
       throw new Error('您已被淘汰');
     }
 
-    // 检查下注是否符合规则：必须 >= 之前的最大下注额
-    if (amount < room.maxBet) {
-      throw new Error(`下注额不能小于 ${room.maxBet}`);
-    }
-
     const minBet = 1; // 最小下注单位
     if (amount < minBet) {
       throw new Error(`最小下注额为 ${minBet}`);
@@ -372,6 +367,13 @@ export class RoomManager {
     // 根据是否看牌计算实际下注额
     const multiplier = player.isLooking ? 2 : 1;
     const actualBet = amount * multiplier;
+
+    // 检查实际消耗是否 >= 当前最大下注额（确保公平）
+    if (actualBet < room.maxBet) {
+      // 计算需要下注的最小值
+      const minAmount = Math.ceil(room.maxBet / multiplier);
+      throw new Error(`${player.isLooking ? '看牌' : '闷牌'}最小下注 ${minAmount}（消耗${room.maxBet}积分）`);
+    }
 
     // 检查积分是否足够
     if (player.chips < actualBet) {
@@ -384,9 +386,9 @@ export class RoomManager {
     player.totalBet += actualBet;
     room.pot += actualBet;
 
-    // 更新最高下注额（记录玩家选择的amount，而非实际消耗）
-    if (amount > room.maxBet) {
-      room.maxBet = amount;
+    // 更新最高下注额（记录实际消耗，确保跟注公平）
+    if (actualBet > room.maxBet) {
+      room.maxBet = actualBet;
     }
 
     // 记录操作
