@@ -120,3 +120,37 @@ export const updatePlayerReady = (roomId, isReady) => {
   const socket = getSocket();
   socket.emit('playerReady', { roomId, isReady });
 };
+
+// ==================== 炸金花游戏函数 ====================
+
+/**
+ * 下注
+ */
+export const placeBet = (roomId, amount) => {
+  const socket = getSocket();
+  socket.emit('placeBet', { roomId, amount });
+};
+
+/**
+ * 看牌
+ */
+export const lookAtCards = (roomId) => {
+  const socket = getSocket();
+  socket.emit('lookAtCards', { roomId });
+};
+
+/**
+ * 比牌
+ */
+export const compareCards = (roomId, targetPlayerId) => {
+  const socket = getSocket();
+  socket.emit('compareCards', { roomId, targetPlayerId });
+};
+
+/**
+ * 弃牌
+ */
+export const fold = (roomId) => {
+  const socket = getSocket();
+  socket.emit('fold', { roomId });
+};

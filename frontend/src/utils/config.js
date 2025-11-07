@@ -35,3 +35,13 @@ export const GAME_CONFIG = {
   MAX_PLAYERS: 6,
   CARD_OPTIONS: [3, 5]
 };
+
+// 炸金花游戏配置
+export const ZHAJINHUA_CONFIG = {
+  INITIAL_CHIPS: 100,    // 初始积分
+  ANTE: 1,               // 底注
+  MIN_BET: 1,            // 最小下注单位
+  MAX_ROUNDS: 10,        // 最大轮数
+  BLIND_BET_MAX: 10,     // 闷牌最大下注（单次）
+  LOOK_BET_MAX: 20       // 看牌最大下注（单次）
+};

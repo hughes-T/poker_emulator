@@ -162,6 +162,140 @@ export class SocketHandlers {
       }
     });
 
+    // ==================== 炸金花游戏事件 ====================
+
+    // 下注
+    socket.on('placeBet', (data) => {
+      try {
+        const { roomId, amount } = data;
+
+        if (!roomId) {
+          socket.emit('error', { message: '房间 ID 不能为空' });
+          return;
+        }
+
+        if (typeof amount !== 'number' || amount < 1) {
+          socket.emit('error', { message: '下注额必须大于等于 1' });
+          return;
+        }
+
+        const room = this.roomManager.placeBet(roomId, socket.id, amount);
+
+        // 通知房间内所有人
+        this.io.to(roomId).emit('betPlaced', { room, playerId: socket.id, amount });
+        this.io.to(roomId).emit('gameStateUpdate', { room });
+
+        console.log(`玩家 ${socket.id} 在房间 ${roomId} 下注 ${amount}`);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : '下注失败';
+        socket.emit('error', { message });
+      }
+    });
+
+    // 看牌
+    socket.on('lookAtCards', (data) => {
+      try {
+        const { roomId } = data;
+
+        if (!roomId) {
+          socket.emit('error', { message: '房间 ID 不能为空' });
+          return;
+        }
+
+        const room = this.roomManager.lookAtCards(roomId, socket.id);
+
+        // 通知房间内所有人
+        this.io.to(roomId).emit('cardsLooked', { room, playerId: socket.id });
+        this.io.to(roomId).emit('gameStateUpdate', { room });
+
+        console.log(`玩家 ${socket.id} 在房间 ${roomId} 看牌`);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : '看牌失败';
+        socket.emit('error', { message });
+      }
+    });
+
+    // 比牌
+    socket.on('compareCards', (data) => {
+      try {
+        const { roomId, targetPlayerId } = data;
+
+        if (!roomId) {
+          socket.emit('error', { message: '房间 ID 不能为空' });
+          return;
+        }
+
+        if (!targetPlayerId) {
+          socket.emit('error', { message: '请选择比牌对象' });
+          return;
+        }
+
+        const result = this.roomManager.compareCards(roomId, socket.id, targetPlayerId);
+
+        // 通知房间内所有人比牌结果
+        this.io.to(roomId).emit('compareResult', {
+          room: result.room,
+          winnerId: result.winnerId,
+          loserId: result.loserId,
+          winnerHand: result.winnerHand,
+          loserHand: result.loserHand
+        });
+        this.io.to(roomId).emit('gameStateUpdate', { room: result.room });
+
+        console.log(`房间 ${roomId} 比牌: ${socket.id} vs ${targetPlayerId}, 胜者: ${result.winnerId}`);
+
+        // 检查游戏是否结束
+        if (result.room.status === 'finished') {
+          const activePlayers = result.room.players.filter(p => !p.isFolded);
+          if (activePlayers.length === 1) {
+            this.io.to(roomId).emit('gameEnd', {
+              room: result.room,
+              winnerId: activePlayers[0].id,
+              amount: result.room.pot
+            });
+          }
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : '比牌失败';
+        socket.emit('error', { message });
+      }
+    });
+
+    // 弃牌
+    socket.on('fold', (data) => {
+      try {
+        const { roomId } = data;
+
+        if (!roomId) {
+          socket.emit('error', { message: '房间 ID 不能为空' });
+          return;
+        }
+
+        const room = this.roomManager.fold(roomId, socket.id);
+
+        // 通知房间内所有人
+        this.io.to(roomId).emit('playerFolded', { room, playerId: socket.id });
+        this.io.to(roomId).emit('gameStateUpdate', { room });
+
+        console.log(`玩家 ${socket.id} 在房间 ${roomId} 弃牌`);
+
+        // 检查游戏是否结束
+        if (room.status === 'finished') {
+          const activePlayers = room.players.filter(p => !p.isFolded);
+          if (activePlayers.length === 1) {
+            this.io.to(roomId).emit('gameEnd', {
+              room,
+              winnerId: activePlayers[0].id,
+              amount: room.pot
+            });
+          }
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : '弃牌失败';
+        socket.emit('error', { message });
+      }
+    });
+
     // 断开连接
     socket.on('disconnect', () => {
       console.log(`客户端断开: ${socket.id}`);
