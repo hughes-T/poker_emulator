@@ -93,6 +93,15 @@ function PlayerCard({ player, isCurrentPlayer, showCards, isCurrentTurn, gameSta
               />
             ))
           )
+        ) : isPlaying && typeof player.chips !== 'undefined' ? (
+          // 炸金花游戏中，即使没有cards数据也显示3张牌背面
+          [...Array(3)].map((_, index) => (
+            <CardBack
+              key={index}
+              className="animate-card-deal"
+              style={{ animationDelay: `${index * 100}ms` }}
+            />
+          ))
         ) : (
           <p className="text-white/50 text-sm">暂无手牌</p>
         )}

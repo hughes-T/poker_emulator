@@ -53,12 +53,22 @@ function Room() {
     });
 
     socket.on('cardsDealt', (data) => {
-      // 更新房间状态，显示所有玩家的牌
-      setRoom(prevRoom => ({
-        ...prevRoom,
-        players: data.players,
-        status: prevRoom?.gameType === 3 ? 'playing' : 'dealt'
-      }));
+      // 更新玩家的手牌数据
+      setRoom(prevRoom => {
+        if (!prevRoom) return null;
+
+        // 合并新的cards数据到现有玩家
+        const updatedPlayers = prevRoom.players.map(p => {
+          const playerData = data.players.find(dp => dp.id === p.id);
+          return playerData ? { ...p, cards: playerData.cards } : p;
+        });
+
+        return {
+          ...prevRoom,
+          players: updatedPlayers,
+          status: prevRoom.gameType === 3 ? 'playing' : 'dealt'
+        };
+      });
     });
 
     socket.on('playerReadyUpdate', (data) => {
@@ -334,7 +344,7 @@ function Room() {
                 player={player}
                 isCurrentPlayer={player.id === myId}
                 isCurrentTurn={currentTurnPlayer?.id === player.id}
-                showCards={player.id === myId} // 只显示自己的牌
+                showCards={player.id === myId && player.isLooking} // 只有自己且已看牌才显示
                 gameStatus={room.status}
               />
             ))}
